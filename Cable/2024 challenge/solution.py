@@ -1,8 +1,9 @@
-# %%
+# %% Caleb's Attempt
 
 import numpy as np
 import pandas as pd
 import datetime
+import os
 
 import plotly.express as px
 import plotly.graph_objects as go
@@ -13,6 +14,8 @@ from sklearn.ensemble import RandomForestClassifier
 print('---> Python Script Start', t0 := datetime.datetime.now())
 
 # %%
+path = './Cable/2024 challenge'
+os.chdir(path)
 
 print('---> the parameters')
 
@@ -28,10 +31,10 @@ verbose = False
 print('---> initial data set up')
 
 # sector data
-df_sectors = pd.read_csv('data/data0.csv')
+df_sectors = pd.read_csv(os.path.join(os.getcwd(),'data/data0.csv'))
 
 # price and fin data
-df_data = pd.read_csv('data/data1.csv')
+df_data = pd.read_csv(os.path.join(os.getcwd(),'data/data1.csv'))
 df_data['date'] = pd.to_datetime(df_data['date']).apply(lambda d: d.date())
 
 df_x = df_data[['date', 'security', 'price', 'return30', 'ratio_pe', 'ratio_pcf', 'ratio_de', 'ratio_roe', 'ratio_roa']].copy()
