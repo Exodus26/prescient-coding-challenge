@@ -1,8 +1,9 @@
-# Sam initial attempt
+# %%
 
 import numpy as np
 import pandas as pd
 import datetime
+import os
 
 import plotly.express as px
 import plotly.graph_objects as go
@@ -28,10 +29,10 @@ verbose = False
 print('---> initial data set up')
 
 # sector data
-df_sectors = pd.read_csv('data/data0.csv')
+df_sectors = pd.read_csv('data\data0.csv')
 
 # price and fin data
-df_data = pd.read_csv('data/data1.csv')
+df_data = pd.read_csv('data\data1.csv')
 df_data['date'] = pd.to_datetime(df_data['date']).apply(lambda d: d.date())
 
 df_x = df_data[['date', 'security', 'price', 'return30', 'ratio_pe', 'ratio_pcf', 'ratio_de', 'ratio_roe', 'ratio_roa']].copy()
@@ -109,10 +110,10 @@ df_buys
 
 # check some signal plots
 fig_aapl = px.line(df_signals, x='date', y='AAPL')
-fig_aapl.show()
+#fig_aapl.show()
 
 fig_pixel = px.imshow(np.array(df_buys[df_sectors['security'].values]))
-fig_pixel.show()
+#fig_pixel.show()
 
 # %%
 
@@ -155,3 +156,5 @@ df_payoff = plot_payoff(df_buys)
 print('---> Python Script End', t1 := datetime.datetime.now())
 print('---> Total time taken', t1 - t0)
 
+
+# %%
