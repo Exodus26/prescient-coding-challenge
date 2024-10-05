@@ -3,28 +3,6 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-# OH NO! A MOP?
-def main():
-    #A BROOM?
-    current_dir = os.path.join(os.getcwd(),'Cable/2024 challenge')
-    data_dir = os.path.join(current_dir, 'data')
-
-    df_sectors = pd.read_csv(os.path.join(data_dir,'data0.csv'))
-    df_prices = pd.read_csv(os.path.join(data_dir,'data1.csv'))
-
-    print(df_sectors.head())
-    print(df_prices.head())
-
-    df_prices['date'] = pd.to_datetime(df_prices['date'])
-    df_prices.set_index('date', inplace=True)
-
-    df_pivoted_prices = df_prices.pivot(columns='security', values='price')
-    df_price_diffs = df_pivoted_prices.diff()
-
-    print(df_price_diffs.head())
-    
-if __name__ == '__main__':
-    main()
 
 # Function to identify optimal buy/sell points based on cumulative changes for maximum profit
 def peak_to_trough_trades(changes, threshold=0.05):  # Threshold as percentage of cumulative change
@@ -88,30 +66,54 @@ def peak_to_trough_trades(changes, threshold=0.05):  # Threshold as percentage o
 
     # Add the holding status to the trade DataFrame
     trade_df['Holding Status'] = holding_status[trade_df['Buy Date']].reindex(trade_df['Buy Date']).fillna(False).values
+    print(trade_df.head())
     
     return trade_df, holding_status  # Return both the trade DataFrame and holding status
 
-# Load data (same as your current setup)
-current_directory = os.getcwd()
-current_directory = os.path.join(current_directory, 'Cable')
-relative_path = os.path.join(current_directory, 'returns_train.csv')
-data = pd.read_csv(relative_path)
+# OH NO! A MOP?
+def main():
+    #A BROOM?
+    current_dir = os.path.join(os.getcwd(),'Cable/2024 challenge')
+    data_dir = os.path.join(current_dir, 'data')
 
-# Convert 'month_end' to datetime and set as index
-data['Dates'] = pd.to_datetime(data['month_end'])
-data.set_index('Dates', inplace=True)
+    df_sectors = pd.read_csv(os.path.join(data_dir,'data0.csv'))
+    df_prices = pd.read_csv(os.path.join(data_dir,'data1.csv'))
 
-# Set a threshold (e.g., 5% change)
-threshold_value = 0.25  # Threshold can be adjusted to your desired level
+    # print(df_sectors.head())
+    # print(df_prices.head())
 
-# Process each stock column
-for column in data.columns:
-    if 'Stock' in column:
-        changes = data[column]
+    df_prices['date'] = pd.to_datetime(df_prices['date'])
+    df_prices.set_index('date', inplace=True)
+
+    df_pivoted_prices = df_prices.pivot(columns='security', values='price')
+
+    # Normalize each column based on the first non-zero entry
+    normalized_prices = df_pivoted_prices.copy()
+
+    for column in normalized_prices.columns:
+        # Find the first non-zero entry in the column
+        first_non_zero = normalized_prices[column][normalized_prices[column] != 0].iloc[0]
+        # Normalize the column by dividing by the first non-zero entry
+        normalized_prices[column] = normalized_prices[column] / first_non_zero
+
+    df_price_diffs = normalized_prices.diff()
+
+    print(df_price_diffs.head())
+
+    df_data = df_price_diffs.copy()
+    # print(df_data.head())
+
+    # Set a threshold (e.g., 5% change)
+    threshold_value = 0.25  # Threshold can be adjusted to your desired level
+
+    # Process each stock column
+    for column in df_data.columns:
+        df_single_changes = df_data[column]
+        print(df_single_changes.head())
 
         # Identify the optimal buy/sell trades based on cumulative changes and the threshold
-        trade_data, holding_status = peak_to_trough_trades(changes, threshold=threshold_value)  # Capture both outputs
-
+        trade_data, holding_status = peak_to_trough_trades(df_single_changes, threshold=threshold_value)  # Capture both outputs
+        print(trade_data.head())
         # Display the trade data for this stock
         print(f"Trade data for {column}:")
         print(trade_data)
@@ -121,87 +123,104 @@ for column in data.columns:
         print(f"Total Profit for {column}: {total_profit}")
 
         # Add the Holding Status to the original data
-        data[f'Holding Status {column}'] = holding_status
+        df_data[f'Holding Status {column}'] = holding_status
 
         # Create a new column for profit that reflects the profits during the holding period
-        data[f'Profit {column}'] = np.nan  # Initialize profit column
+        df_data[f'Profit {column}'] = np.nan  # Initialize profit column
         for index, row in trade_data.iterrows():
-            data.loc[row['Buy Date']:row['Sell Date'], f'Profit {column}'] = row['Profit']
+            df_data.loc[row['Buy Date']:row['Sell Date'], f'Profit {column}'] = row['Profit']
 
         # Optionally, fill NaN values in the Profit column with 0 (for dates without trades)
-        data[f'Profit {column}'].fillna(0, inplace=True)
+        df_data[f'Profit {column}'].fillna(0, inplace=True)
 
-# Display the updated data DataFrame
-# print(data)
+        # Plot the stock changes and buy/sell points
+        plt.figure(figsize=(12, 6))
+        plt.plot(df_data.index, df_single_changes.cumsum(), label=f'Cumulative {column} Changes')
+        plt.scatter(trade_data['Buy Date'], trade_data['Buy Change'], color='green', label='Buy', marker='^', s=100)
+        plt.scatter(trade_data['Sell Date'], trade_data['Sell Change'], color='red', label='Sell', marker='v', s=100)
+        plt.title(f'Peak-to-Trough Buy/Sell Points for {column} Based on Changes with Threshold')
+        plt.xlabel('Dates')
+        plt.ylabel('Cumulative Changes')
+        plt.legend()
+        plt.grid()
+        plt.show()
 
-monthly_profits = pd.DataFrame(index=data.index)
+    # Display the updated data DataFrame
+    # print(data)
 
-# Calculate monthly profits for each stock and sum them
-for column in data.columns:
-    if 'Profit' in column:
-        monthly_profits[column] = data[column]
+    profits = pd.DataFrame(index=df_data.index)
 
-print(monthly_profits)
+    # Calculate monthly profits for each stock and sum them
+    for column in df_data.columns:
+        profits[column] = df_data[column]
+
+    print(profits)
 
 
-# Create a new DataFrame for averaged profits
-averaged_profits = pd.DataFrame(index=monthly_profits.index)
+    # Create a new DataFrame for averaged profits
+    averaged_profits = pd.DataFrame(index=profits.index)
 
-# Divide each profit value by the number of times it appears in succession
-for column in monthly_profits.columns:
-    profits = monthly_profits[column]
-    constant_segments = (profits != profits.shift()).cumsum()  # Identify segments where the value changes
+    # Divide each profit value by the number of times it appears in succession
+    for column in profits.columns:
+        profits = profits[column]
+        constant_segments = (profits != profits.shift()).cumsum()  # Identify segments where the value changes
 
-    # Count occurrences in each segment
-    counts = profits.groupby(constant_segments).transform('size')
+        # Count occurrences in each segment
+        counts = profits.groupby(constant_segments).transform('size')
 
-    # Divide the profit by the count for each segment
-    divided_column = profits / counts
+        # Divide the profit by the count for each segment
+        divided_column = profits / counts
 
-    # Store the divided profits in the new DataFrame
-    averaged_profits[column] = divided_column
+        # Store the divided profits in the new DataFrame
+        averaged_profits[column] = divided_column
 
-# Display the new DataFrame containing averaged profits
-print(averaged_profits)
+    # Display the new DataFrame containing averaged profits
+    print(averaged_profits)
 
-# Create a new DataFrame for adjusted values
-new_adjusted_profits = pd.DataFrame(index=averaged_profits.index, columns=averaged_profits.columns)
+    # Create a new DataFrame for adjusted values
+    new_adjusted_profits = pd.DataFrame(index=averaged_profits.index, columns=averaged_profits.columns)
 
-# Iterate through each row of the averaged profits DataFrame
-for index, row in averaged_profits.iterrows():
-    row_values = row.copy()
-    adjusted_row = pd.Series(0, index=row.index)  # Initialize the adjusted row with zeros
-    
-    # Get the top 10 indices based on values
-    top_indices = row_values.nlargest(10).index.tolist()
-    
-    # If there are fewer than 10 items greater than 0, adjust accordingly
-    count_greater_than_zero = (row_values > 0).sum()
+    # Iterate through each row of the averaged profits DataFrame
+    for index, row in averaged_profits.iterrows():
+        row_values = row.copy()
+        adjusted_row = pd.Series(0, index=row.index)  # Initialize the adjusted row with zeros
+        
+        # Get the top 10 indices based on values
+        top_indices = row_values.nlargest(10).index.tolist()
+        
+        # If there are fewer than 10 items greater than 0, adjust accordingly
+        count_greater_than_zero = (row_values > 0).sum()
 
-    # Add 0.1 for each of the top values (or as many as exist)
-    for idx in top_indices:
-        adjusted_row[idx] = 0.1
+        # Add 0.1 for each of the top values (or as many as exist)
+        for idx in top_indices:
+            adjusted_row[idx] = 0.1
 
-    # If there are fewer than 10 items greater than 0
-    if count_greater_than_zero < 10:
-        # Randomly add 0.01 to the remaining entries until the sum equals 1
+        # If there are fewer than 10 items greater than 0
+        if count_greater_than_zero < 10:
+            # Randomly add 0.01 to the remaining entries until the sum equals 1
+            while adjusted_row.sum() < 1:
+                random_index = np.random.choice(row_values.index[row_values > 0], size=1)[0]  # Pick a random index of a non-zero value
+                if adjusted_row[random_index] < 0.1:  # Ensure we only add to valid positions
+                    adjusted_row[random_index] += 0.01
+
+        # Normalize if the sum is still less than 1
         while adjusted_row.sum() < 1:
-            random_index = np.random.choice(row_values.index[row_values > 0], size=1)[0]  # Pick a random index of a non-zero value
-            if adjusted_row[random_index] < 0.1:  # Ensure we only add to valid positions
-                adjusted_row[random_index] += 0.01
+            for col in adjusted_row.index:
+                if adjusted_row.sum() < 1:
+                    adjusted_row[col] += 0.01
 
-    # Normalize if the sum is still less than 1
-    while adjusted_row.sum() < 1:
-        for col in adjusted_row.index:
-            if adjusted_row.sum() < 1:
-                adjusted_row[col] += 0.01
+        # Store the adjusted row in the new DataFrame
+        new_adjusted_profits.loc[index] = adjusted_row
 
-    # Store the adjusted row in the new DataFrame
-    new_adjusted_profits.loc[index] = adjusted_row
+    # Display the new DataFrame containing adjusted profits
+    print(new_adjusted_profits)
 
-# Display the new DataFrame containing adjusted profits
-print(new_adjusted_profits)
+    for index, row in new_adjusted_profits.iterrows():
+        print(f"Sum {row.sum()}")
+        print(f"Max {row.max()}")
 
-for index, row in new_adjusted_profits.iterrows():
-    print(f"Sum {row.sum()}")
-    print(f"Max {row.max()}")
+    
+if __name__ == '__main__':
+    main()
+
+
