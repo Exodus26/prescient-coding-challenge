@@ -9,22 +9,23 @@ def main():
     current_dir = os.path.join(os.getcwd(),'Cable/2024 challenge')
     data_dir = os.path.join(current_dir, 'data')
 
-    sectors = pd.read_csv(os.path.join(data_dir,'data0.csv'))
-    prices = pd.read_csv(os.path.join(data_dir,'data1.csv'))
+    df_sectors = pd.read_csv(os.path.join(data_dir,'data0.csv'))
+    df_prices = pd.read_csv(os.path.join(data_dir,'data1.csv'))
 
-    print(sectors.head())
-    print(prices.head())
+    print(df_sectors.head())
+    print(df_prices.head())
 
-    prices['date'] = pd.to_datetime(prices['date'])
-    prices.set_index('date', inplace=True)
-    price_diffs = prices['price'].diff()
+    df_prices['date'] = pd.to_datetime(df_prices['date'])
+    df_prices.set_index('date', inplace=True)
 
-    pivoted_prices = prices.pivot(columns='security', values='price')
-    print(pivoted_prices.head())
+    df_pivoted_prices = df_prices.pivot(columns='security', values='price')
+    df_price_diffs = df_pivoted_prices.diff()
 
+    print(df_price_diffs.head())
+    
 if __name__ == '__main__':
     main()
-'''
+
 # Function to identify optimal buy/sell points based on cumulative changes for maximum profit
 def peak_to_trough_trades(changes, threshold=0.05):  # Threshold as percentage of cumulative change
     buy_dates = []
@@ -204,4 +205,3 @@ print(new_adjusted_profits)
 for index, row in new_adjusted_profits.iterrows():
     print(f"Sum {row.sum()}")
     print(f"Max {row.max()}")
-'''
