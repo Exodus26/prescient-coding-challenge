@@ -182,3 +182,4 @@ print(new_adjusted_profits)
 for index, row in new_adjusted_profits.iterrows():
     print(f"Sum {row.sum()}")
     print(f"Max {row.max()}")
+
