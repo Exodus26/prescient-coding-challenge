@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 # OH NO! A MOP?
 def main():
+    #A BROOM?
     current_dir = os.path.join(os.getcwd(),'Cable/2024 challenge')
     data_dir = os.path.join(current_dir, 'data')
 
@@ -14,9 +15,12 @@ def main():
     print(sectors.head())
     print(prices.head())
 
+    prices['date'] = pd.to_datetime(prices['date'])
     prices.set_index('date', inplace=True)
     price_diffs = prices['price'].diff()
-    print(price_diffs.head())
+
+    pivoted_prices = prices.pivot(columns='security', values='price')
+    print(pivoted_prices.head())
 
 if __name__ == '__main__':
     main()
