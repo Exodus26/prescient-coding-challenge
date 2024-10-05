@@ -1,83 +1,68 @@
 import numpy as np
 
-# Activation function: Sigmoid and its derivative
 def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
+    return 1/(1+np.exp(-x))
 
-def sigmoid_derivative(x):
-    return x * (1 - x)
+def d_sigmoid(x):
+    return x*(1-x)
 
-# Mean Squared Error Loss Function
-def mse_loss(y_true, y_pred):
-    return np.mean((y_true - y_pred) ** 2)
+def mse(actual, predicted):
+    return np.mean((actual-predicted)**2)
 
-# Neural Network class
+def accuracy(actual, predicted):
+    return np.mean(actual == predicted)
+
+def process_output(output, max_number=10):
+    # Step 1: Ensure the sum of the array is 100
+    scaled_output = output / np.sum(output) * 100 if np.sum(output) != 0 else np.array([100 / len(output) for _ in output])
+    
+    # Step 2: Ensure no element exceeds the max_number (e.g., 10)
+    # If any element is larger than max_number, reduce it and distribute the remainder
+    excess = 0
+    for i in range(len(scaled_output)):
+        if scaled_output[i] > max_number:
+            excess += scaled_output[i] - max_number
+            scaled_output[i] = max_number
+    
+    # Step 3: Distribute the excess back proportionally to elements that are below max_number
+    below_max_indices = [i for i in range(len(scaled_output)) if scaled_output[i] < max_number]
+    
+    while excess > 0 and below_max_indices:
+        for i in below_max_indices:
+            available_increase = max_number - scaled_output[i]
+            increase = min(excess, available_increase)
+            scaled_output[i] += increase
+            excess -= increase
+            if scaled_output[i] >= max_number:
+                below_max_indices.remove(i)
+
+    # Step 4: Ensure final adjustment so the sum is exactly 100
+    final_scaling_factor = 100 / np.sum(scaled_output)
+    scaled_output *= final_scaling_factor
+
+    return scaled_output
+
 class NeuralNetwork:
-    def __init__(self, input_size, hidden_size, output_size):
-        # Initialize weights
-        self.weights_input_hidden = np.random.randn(input_size, hidden_size)
-        self.weights_hidden_output = np.random.randn(hidden_size, output_size)
-        
-        # Initialize biases
-        self.bias_hidden = np.random.randn(1, hidden_size)
-        self.bias_output = np.random.randn(1, output_size)
+    def __init__(self, input_size, hidden_layers, output_size, output_activation = (sigmoid, d_sigmoid)):
+        self.layers = [input_size] + hidden_layers + [output_size]
 
-    def feedforward(self, X):
-        # Input to hidden layer
-        self.hidden_layer_input = np.dot(X, self.weights_input_hidden) + self.bias_hidden
-        self.hidden_layer_output = sigmoid(self.hidden_layer_input)
-        
-        # Hidden to output layer
-        self.output_layer_input = np.dot(self.hidden_layer_output, self.weights_hidden_output) + self.bias_output
-        self.output_layer_output = sigmoid(self.output_layer_input)
-        
-        return self.output_layer_output
+        self.weights = [np.random.randn(self.layers[i], self.layers[i + 1]) for i in range(len(self.layers) - 1)]
+        self.biases = [np.random.randn(1, self.layers[i + 1]) for i in range(len(self.layers) - 1)]
+        self.o_a, self.do_a = output_activation
 
-    def backpropagate(self, X, y, learning_rate):
-        # Feedforward
-        output = self.feedforward(X)
-        
-        # Calculate the error (loss) and gradients
-        output_error = y - output  # Loss gradient for output layer
-        output_gradient = output_error * sigmoid_derivative(output)
-        
-        # Calculate hidden layer error and gradient
-        hidden_error = np.dot(output_gradient, self.weights_hidden_output.T)
-        hidden_gradient = hidden_error * sigmoid_derivative(self.hidden_layer_output)
-        
-        # Update the weights and biases
-        self.weights_hidden_output += np.dot(self.hidden_layer_output.T, output_gradient) * learning_rate
-        self.weights_input_hidden += np.dot(X.T, hidden_gradient) * learning_rate
-        self.bias_output += np.sum(output_gradient, axis=0, keepdims=True) * learning_rate
-        self.bias_hidden += np.sum(hidden_gradient, axis=0, keepdims=True) * learning_rate
+    def feedforward(self, x):
+        self.layer_outputs = [x]
+        for i in range(len(self.weights)):
+            Z = np.dot(x, self.weights[i]) + self.biases[i]
+            Y = sigmoid(Z) if i < len(self.weights) - 1 else self.o_a(Z)
+            self.layer_outputs.append(x)
+        return x
+    
+    def backpropagate(self, x, y, learning_rate):
+        output = self.feedforward(x)
 
-    def train(self, X, y, epochs, learning_rate):
-        for epoch in range(epochs):
-            # Forward pass and backpropagation
-            self.backpropagate(X, y, learning_rate)
-            
-            # Calculate and print loss every 100 epochs
-            if epoch % 100 == 0:
-                loss = mse_loss(y, self.feedforward(X))
-                print(f'Epoch {epoch}, Loss: {loss}')
+        # process it?
 
-# Sample XOR dataset
-X = np.array([[0, 0],
-              [0, 1],
-              [1, 0],
-              [1, 1]])
+        error = y - output
+        gradients = np.array([error * self.output_activation_derivative(error)])
 
-y = np.array([[0],
-              [1],
-              [1],
-              [0]])
-
-# Create the neural network
-nn = NeuralNetwork(input_size=2, hidden_size=2, output_size=1)
-
-# Train the neural network
-nn.train(X, y, epochs=1000, learning_rate=0.4)
-
-# Test the neural network
-output = nn.feedforward(X)
-print("Predicted Output:\n", output)
