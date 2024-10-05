@@ -34,21 +34,20 @@ print('---> initial data set up')
 current_dir = os.path.join(os.getcwd(),'Sam/2024 challenge')
 data_dir = os.path.join(current_dir, 'data')
 
-
-df_sectors = pd.read_csv('data\data0.csv')
-
-df_data = pd.read_csv('data\data1.csv')
-
+df_sectors = pd.read_csv(os.path.join(data_dir,'data0.csv'))
+df_data = pd.read_csv(os.path.join(data_dir,'data1.csv'))
 df_data['date'] = pd.to_datetime(df_data['date']).apply(lambda d: d.date())
+df_data['date'] = pd.to_datetime(df_data['date'])
+df_data.set_index('date', inplace=True)
 
-df_x = df_data[['date', 'security', 'price', 'return30', 'ratio_pe', 'ratio_pcf', 'ratio_de', 'ratio_roe', 'ratio_roa']].copy()
-df_y = df_data[['date', 'security', 'label']].copy()
+df_pivoted_prices = df_data.pivot(columns='security', values='price')
+print(df_pivoted_prices)
 
-list_vars1 = ['price', 'return30', 'ratio_pe', 'ratio_pcf', 'ratio_de', 'ratio_roe', 'ratio_roa']
-
-print(df_data)
-
+df_price_diffs = df_pivoted_prices.diff()
+print(df_price_diffs)
 
 
-if __name__=='__main__':
-    main()
+
+
+
+# %%
