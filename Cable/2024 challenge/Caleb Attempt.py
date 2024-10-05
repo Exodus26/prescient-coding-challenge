@@ -1,21 +1,29 @@
+# BROOM???
 import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-
-# BROOM???
-
 # OH NO! A MOP?
-current_dir = os.path.join(os.getcwd(),'Cable/2024 challenge')
-data_dir = os.path.join(current_dir, 'data')
+def main():
+    #A BROOM?
+    current_dir = os.path.join(os.getcwd(),'Cable/2024 challenge')
+    data_dir = os.path.join(current_dir, 'data')
 
-sectors = pd.read_csv(os.path.join(data_dir,'data0.csv'))
-prices = pd.read_csv(os.path.join(data_dir,'data1.csv'))
+    sectors = pd.read_csv(os.path.join(data_dir,'data0.csv'))
+    prices = pd.read_csv(os.path.join(data_dir,'data1.csv'))
 
-print(sectors.head())
-print(prices.head())
+    print(sectors.head())
+    print(prices.head())
 
+    prices['date'] = pd.to_datetime(prices['date'])
+    prices.set_index('date', inplace=True)
+    price_diffs = prices['price'].diff()
 
+    pivoted_prices = prices.pivot(columns='security', values='price')
+    print(pivoted_prices.head())
+
+if __name__ == '__main__':
+    main()
 '''
 # Function to identify optimal buy/sell points based on cumulative changes for maximum profit
 def peak_to_trough_trades(changes, threshold=0.05):  # Threshold as percentage of cumulative change
