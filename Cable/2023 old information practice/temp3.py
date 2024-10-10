@@ -71,7 +71,7 @@ def peak_to_trough_trades(changes, threshold=0.05):  # Threshold as percentage o
 # Load data (same as your current setup)
 current_directory = os.getcwd()
 current_directory = os.path.join(current_directory, 'Cable')
-relative_path = os.path.join(current_directory, 'returns_train.csv')
+relative_path = os.path.join(current_directory, '2024 old information\\returns.csv')
 data = pd.read_csv(relative_path)
 
 # Convert 'month_end' to datetime and set as index
@@ -108,17 +108,17 @@ for column in data.columns:
         # Optionally, fill NaN values in the Profit column with 0 (for dates without trades)
         data[f'Profit {column}'].fillna(0, inplace=True)
 
-        # # Plot the stock changes and buy/sell points
-        # plt.figure(figsize=(12, 6))
-        # plt.plot(data.index, changes.cumsum(), label=f'Cumulative {column} Changes')
-        # plt.scatter(trade_data['Buy Date'], trade_data['Buy Change'], color='green', label='Buy', marker='^', s=100)
-        # plt.scatter(trade_data['Sell Date'], trade_data['Sell Change'], color='red', label='Sell', marker='v', s=100)
-        # plt.title(f'Peak-to-Trough Buy/Sell Points for {column} Based on Changes with Threshold')
-        # plt.xlabel('Dates')
-        # plt.ylabel('Cumulative Changes')
-        # plt.legend()
-        # plt.grid()
-        # plt.show()
+        # Plot the stock changes and buy/sell points
+        plt.figure(figsize=(12, 6))
+        plt.plot(data.index, changes.cumsum(), label=f'Cumulative {column} Changes')
+        plt.scatter(trade_data['Buy Date'], trade_data['Buy Change'], color='green', label='Buy', marker='^', s=100)
+        plt.scatter(trade_data['Sell Date'], trade_data['Sell Change'], color='red', label='Sell', marker='v', s=100)
+        plt.title(f'Peak-to-Trough Buy/Sell Points for {column} Based on Changes with Threshold')
+        plt.xlabel('Dates')
+        plt.ylabel('Cumulative Changes')
+        plt.legend()
+        plt.grid()
+        plt.show()
 
 # Display the updated data DataFrame
 print(data)
